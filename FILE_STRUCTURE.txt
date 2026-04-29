@@ -1,0 +1,132 @@
+PROJECT FILE STRUCTURE - uhi_dash
+================================================================================
+
+ROOT DIRECTORY: c:\Users\roywa\Projects\uhi_dash
+
+.
+├── .env
+├── .gitignore
+├── docker-compose.yml
+├── structure.txt
+│
+├── app/
+│   ├── .gitignore
+│   ├── .next/
+│   │   └── types/
+│   │       ├── cache-life.d.ts
+│   │       ├── routes.d.ts
+│   │       └── validator.ts
+│   ├── AGENTS.md
+│   ├── CLAUDE.md
+│   ├── Dockerfile
+│   ├── biome.json
+│   ├── next-env.d.ts
+│   ├── next.config.ts
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.mjs
+│   ├── README.md
+│   ├── tsconfig.json
+│   ├── node_modules/ (npm packages)
+│   │   ├── @alloc/quick-lru
+│   │   ├── @babel/ (various babel packages)
+│   │   ├── @biomejs/biome
+│   │   ├── @biomejs/cli-win32-x64
+│   │   ├── @emnapi/runtime
+│   │   ├── @img/ (image utilities)
+│   │   ├── @jridgewell/ (source map tools)
+│   │   ├── @next/ (next.js utilities)
+│   │   ├── @swc/helpers
+│   │   ├── @tailwindcss/
+│   │   ├── @types/ (typescript definitions)
+│   │   ├── babel-plugin-react-compiler
+│   │   ├── caniuse-lite
+│   │   ├── client-only
+│   │   ├── csstype
+│   │   ├── enhanced-resolve
+│   │   ├── graceful-fs
+│   │   ├── jiti
+│   │   ├── lightningcss
+│   │   ├── magic-string
+│   │   ├── nanoid
+│   │   ├── next
+│   │   ├── postcss
+│   │   ├── react
+│   │   ├── react-dom
+│   │   ├── scheduler
+│   │   ├── semver
+│   │   ├── sharp
+│   │   ├── styled-jsx
+│   │   ├── tailwindcss
+│   │   ├── typescript
+│   │   └── [other npm packages]
+│   ├── public/ (static assets)
+│   └── src/
+│       ├── app/
+│       │   ├── globals.css
+│       │   ├── layout.tsx
+│       │   └── page.tsx
+│       └── [other source files]
+│
+├── db/
+│   └── [database-related files]
+│
+├── secrets/
+│   └── [secrets/credentials - typically git-ignored]
+│
+└── server/
+    ├── Dockerfile
+    └── main.py
+
+================================================================================
+KEY DIRECTORIES:
+
+app/              - Next.js frontend application
+  - src/         - Source code (React components, app logic)
+  - public/      - Static assets
+  - .next/       - Build output
+  - node_modules/ - npm dependencies
+
+db/               - Database related files
+
+server/           - Python backend server
+  - main.py     - Main server entry point
+  
+secrets/          - Secrets and credentials (should be git-ignored)
+
+================================================================================
+KEY FILES:
+
+docker-compose.yml  - Docker composition for running services
+.env               - Environment variables
+.gitignore         - Git ignore rules
+
+APP FILES:
+package.json       - npm dependencies and scripts
+tsconfig.json      - TypeScript configuration
+next.config.ts     - Next.js configuration
+biome.json         - Code formatter/linter configuration
+postcss.config.mjs - PostCSS configuration
+Dockerfile         - Docker configuration for app service
+
+SERVER FILES:
+main.py            - Python server entry point
+
+================================================================================
+TECHNOLOGY STACK:
+
+Frontend:
+  - Next.js (React framework)
+  - TypeScript
+  - TailwindCSS (styling)
+  - Biome (formatting/linting)
+
+Backend:
+  - Python (main.py)
+  
+Utilities:
+  - Docker/Docker Compose
+  - PostCSS
+  - Various npm packages
+
+================================================================================

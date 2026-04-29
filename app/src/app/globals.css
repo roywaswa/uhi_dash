@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #222222;
+  --accent: #d73027;
+  --text: #e8e8e8;
+  --muted: #666666;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "DM Mono", "Fira Mono", monospace;
+}
+
+button {
+  cursor: pointer;
+}
+
+.maplibregl-ctrl-group {
+  border-radius: 0;
+}
