@@ -16,18 +16,20 @@ export default function LayerToggle({
   onChange,
 }: Props): React.JSX.Element {
   return (
-    <div className="border-[#222222] border-b p-4">
-      <p className="mb-3 text-[#666666] text-[10px] uppercase tracking-[0.2em]">
+    <div className="border-b p-4" style={{ borderColor: "var(--border)" }}>
+      <p className="mb-3 text-[10px] uppercase tracking-[0.2em]" style={{ color: "var(--muted)" }}>
         Layer
       </p>
-      <div className="flex border border-[#222222] bg-[#111111] p-1">
+      <div className="flex border p-1" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
         {LAYERS.map((layer) => (
           <button
             className={`flex-1 px-2 py-2 text-[11px] uppercase tracking-[0.12em] transition-colors ${
-              active === layer.key
-                ? "bg-[#d73027] text-white"
-                : "text-[#888888] hover:bg-[#1b1b1b] hover:text-white"
+              active === layer.key ? "text-white" : ""
             }`}
+            style={{
+              backgroundColor: active === layer.key ? "var(--accent)" : "transparent",
+              color: active === layer.key ? "white" : "var(--muted)",
+            }}
             key={layer.key}
             onClick={() => onChange(layer.key)}
             type="button"

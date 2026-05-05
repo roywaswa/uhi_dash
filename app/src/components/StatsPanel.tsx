@@ -43,11 +43,14 @@ function BarSegments({
 }): React.JSX.Element {
   const activeSegments = Math.round(pct / 5);
   return (
-    <div className="grid h-2 grid-cols-[repeat(20,minmax(0,1fr))] gap-px bg-[#191919]">
+    <div className="grid h-2 grid-cols-[repeat(20,minmax(0,1fr))] gap-px" style={{ backgroundColor: "var(--surface-alt)" }}>
       {BAR_SEGMENTS.map((segment) => (
         <span
-          className={segment <= activeSegments ? colorClass : "bg-[#262626]"}
+          className={segment <= activeSegments ? colorClass : ""}
           key={`segment-${segment}`}
+          style={{
+            backgroundColor: segment <= activeSegments ? undefined : "var(--divider)",
+          }}
         />
       ))}
     </div>
@@ -61,19 +64,19 @@ export default function StatsPanel({
 }: Props): React.JSX.Element {
   if (loading) {
     return (
-      <section className="border-[#222222] border-b p-4">
-        <div className="mb-4 h-4 w-36 animate-pulse bg-[#222222]" />
+      <section className="border-b p-4" style={{ borderColor: "var(--border)" }}>
+        <div className="mb-4 h-4 w-36 animate-pulse" style={{ backgroundColor: "var(--border)" }} />
         <div className="grid grid-cols-2 gap-2">
           {SKELETON_STATS.map((item) => (
-            <div className="border border-[#222222] p-3" key={item}>
-              <div className="mb-3 h-3 w-20 animate-pulse bg-[#222222]" />
-              <div className="h-6 w-16 animate-pulse bg-[#222222]" />
+            <div className="border p-3" key={item} style={{ borderColor: "var(--border)" }}>
+              <div className="mb-3 h-3 w-20 animate-pulse" style={{ backgroundColor: "var(--border)" }} />
+              <div className="h-6 w-16 animate-pulse" style={{ backgroundColor: "var(--border)" }} />
             </div>
           ))}
         </div>
         <div className="mt-4 space-y-3">
           {SKELETON_BARS.map((item) => (
-            <div className="h-6 animate-pulse bg-[#181818]" key={item} />
+            <div className="h-6 animate-pulse" key={item} style={{ backgroundColor: "var(--surface-alt)" }} />
           ))}
         </div>
       </section>
@@ -82,8 +85,8 @@ export default function StatsPanel({
 
   if (!stats) {
     return (
-      <section className="border-[#222222] border-b p-4">
-        <p className="text-[#666666] text-xs uppercase tracking-[0.2em]">
+      <section className="border-b p-4" style={{ borderColor: "var(--border)" }}>
+        <p className="text-xs uppercase tracking-[0.2em]" style={{ color: "var(--muted)" }}>
           No statistics available
         </p>
       </section>
@@ -91,12 +94,12 @@ export default function StatsPanel({
   }
 
   return (
-    <section className="border-[#222222] border-b p-4">
-      <div className="mb-4 flex items-end justify-between border-[#222222] border-b pb-3">
-        <h2 className="font-medium text-sm text-white uppercase tracking-[0.18em]">
+    <section className="border-b p-4" style={{ borderColor: "var(--border)" }}>
+      <div className="mb-4 flex items-end justify-between pb-3" style={{ borderBottom: `1px solid var(--border)` }}>
+        <h2 className="font-medium text-sm uppercase tracking-[0.18em]" style={{ color: "var(--text)" }}>
           {city}
         </h2>
-        <span className="text-[#666666] text-[10px] uppercase tracking-[0.2em]">
+        <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: "var(--muted)" }}>
           Jun-Sep 2023
         </span>
       </div>
@@ -104,13 +107,14 @@ export default function StatsPanel({
       <div className="grid grid-cols-2 gap-2">
         {STAT_LABELS.map((item) => (
           <div
-            className="border border-[#222222] bg-[#111111] p-3"
+            className="border p-3"
             key={item.key}
+            style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-alt)" }}
           >
-            <p className="mb-2 text-[#666666] text-[10px] uppercase tracking-[0.16em]">
+            <p className="mb-2 text-[10px] uppercase tracking-[0.16em]" style={{ color: "var(--muted)" }}>
               {item.label}
             </p>
-            <p className="font-medium text-2xl text-[#e8e8e8]">
+            <p className="font-medium text-2xl" style={{ color: "var(--text)" }}>
               {formatStat(stats, item.key, item.suffix)}
             </p>
           </div>
@@ -118,7 +122,7 @@ export default function StatsPanel({
       </div>
 
       <div className="mt-5">
-        <p className="mb-3 text-[#666666] text-[10px] uppercase tracking-[0.2em]">
+        <p className="mb-3 text-[10px] uppercase tracking-[0.2em]" style={{ color: "var(--muted)" }}>
           Vulnerability Tier Area
         </p>
         <div className="space-y-3">
@@ -129,9 +133,11 @@ export default function StatsPanel({
                 className="grid grid-cols-[38px_1fr_42px] items-center gap-2"
                 key={tier}
               >
-                <span className="text-[#888888] text-[11px]">T{tier}</span>
+                <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                  T{tier}
+                </span>
                 <BarSegments colorClass={TIER_COLORS[index]} pct={pct} />
-                <span className="text-right text-[#e8e8e8] text-[11px]">
+                <span className="text-right text-[11px]" style={{ color: "var(--text)" }}>
                   {pct}%
                 </span>
               </div>

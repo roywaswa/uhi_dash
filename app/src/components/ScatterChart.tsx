@@ -13,7 +13,7 @@ import {
   Title,
   Tooltip,
 } from "chart.js";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Scatter } from "react-chartjs-2";
 import type { ScatterPoint } from "@/types/uhi";
 
@@ -37,6 +37,23 @@ interface Props {
 interface ChartPoint {
   x: number;
   y: number;
+}
+
+function getThemeColors() {
+  if (typeof document === "undefined") {
+    return {
+      text: "#e8e8e8",
+      textMuted: "#888888",
+      border: "#222222",
+    };
+  }
+  
+  const root = document.documentElement;
+  return {
+    text: getComputedStyle(root).getPropertyValue("--text").trim() || "#e8e8e8",
+    textMuted: getComputedStyle(root).getPropertyValue("--text-muted").trim() || "#888888",
+    border: getComputedStyle(root).getPropertyValue("--border").trim() || "#222222",
+  };
 }
 
 function trendline(points: ScatterPoint[]): ChartPoint[] {
@@ -67,6 +84,19 @@ export default function ScatterChart({
   loading,
   city,
 }: Props): React.JSX.Element {
+  const [themeColors, setThemeColors] = useState(() => getThemeColors());
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setThemeColors(getThemeColors());
+    };
+    
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true });
+    
+    return () => observer.disconnect();
+  }, []);
+
   const chartData = useMemo<ChartData<"scatter", ChartPoint[]>>(
     () => ({
       datasets: [
@@ -99,7 +129,7 @@ export default function ScatterChart({
       plugins: {
         legend: {
           labels: {
-            color: "#a0a0a0",
+            color: themeColors.textMuted,
             boxWidth: 10,
             font: { family: "DM Mono" },
           },
@@ -107,7 +137,7 @@ export default function ScatterChart({
         title: {
           display: true,
           text: `${city} — LST vs NDVI (1km grid cells)`,
-          color: "#e8e8e8",
+          color: themeColors.text,
           font: { family: "DM Mono", size: 12, weight: 500 },
         },
         tooltip: {
@@ -123,32 +153,32 @@ export default function ScatterChart({
         x: {
           min: -0.1,
           max: 0.8,
-          title: { display: true, text: "NDVI", color: "#888888" },
-          grid: { color: "#222222" },
-          ticks: { color: "#888888" },
+          title: { display: true, text: "NDVI", color: themeColors.textMuted },
+          grid: { color: themeColors.border },
+          ticks: { color: themeColors.textMuted },
         },
         y: {
           min: 15,
           max: 60,
-          title: { display: true, text: "LST C", color: "#888888" },
-          grid: { color: "#222222" },
-          ticks: { color: "#888888" },
+          title: { display: true, text: "LST C", color: themeColors.textMuted },
+          grid: { color: themeColors.border },
+          ticks: { color: themeColors.textMuted },
         },
       },
     }),
-    [city],
+    [city, themeColors],
   );
 
   if (loading) {
     return (
-      <section className="min-h-0 flex-1 border-[#222222] border-b p-4">
-        <div className="h-full min-h-64 animate-pulse bg-[#111111]" />
+      <section className="min-h-0 flex-1 border-b p-4" style={{ borderColor: "var(--border)" }}>
+        <div className="h-full min-h-64 animate-pulse" style={{ backgroundColor: "var(--surface-alt)" }} />
       </section>
     );
   }
 
   return (
-    <section className="min-h-0 flex-1 border-[#222222] border-b p-4">
+    <section className="min-h-0 flex-1 border-b p-4" style={{ borderColor: "var(--border)" }}>
       <div className="h-full min-h-64">
         <Scatter data={chartData} options={options} />
       </div>

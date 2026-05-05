@@ -4,6 +4,8 @@ import UHIMap from "@/components/UHIMap";
 import StatsPanel from "@/components/StatsPanel";
 import ScatterChart from "@/components/ScatterChart";
 import LayerToggle from "@/components/LayerToggle";
+import TimeSlider from "@/components/TimeSlider";
+import ThemeToggle from "@/components/ThemeToggle";
 import { fetchTiles, fetchStats, fetchScatter } from "@/lib/api";
 import type { CityKey, TileUrls, Stats, ScatterPoint, ActiveLayer } from "@/types/uhi";
 
@@ -16,6 +18,7 @@ const CITY_META: Record<CityKey, { center: [number, number]; zoom: number }> = {
 export default function Home() {
   const [city, setCity] = useState<CityKey>("Nairobi");
   const [activeLayer, setActiveLayer] = useState<ActiveLayer>("lst");
+  const [year, setYear] = useState<number>(2023);
   const [tiles, setTiles] = useState<TileUrls | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [scatter, setScatter] = useState<ScatterPoint[]>([]);
@@ -27,7 +30,11 @@ export default function Home() {
     setLoading(true);
     setError(null);
 
-    Promise.all([fetchTiles(city), fetchStats(city), fetchScatter(city)])
+    Promise.all([
+      fetchTiles(city, year),
+      fetchStats(city, year),
+      fetchScatter(city, year),
+    ])
       .then(([tilesData, statsData, scatterData]) => {
         if (!abortController.signal.aborted) {
           setTiles(tilesData);
@@ -47,45 +54,45 @@ export default function Home() {
       });
 
     return () => abortController.abort();
-  }, [city]);
+  }, [city, year]);
 
   return (
     <div className="flex flex-col h-screen" style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}>
       {/* Header */}
-      <header className="border-b" style={{ borderColor: "var(--border)" }}>
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold tracking-tight font-mono">
-              URBAN HEAT ISLAND
-            </h1>
-            <div className="flex gap-2">
-              {(["Nairobi", "Phoenix", "Delhi"] as const).map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setCity(c)}
-                  className={`px-3 py-1 text-xs uppercase font-semibold border transition-colors ${
-                    city === c
-                      ? "bg-accent text-black border-accent"
-                      : "border-gray-700 text-gray-300 hover:border-gray-500"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
+      <header className="border-b md:px-6 px-4 py-3 md:py-4" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <h1 className="text-lg md:text-2xl font-bold tracking-tight font-mono" style={{ color: "var(--text)" }}>
+            URBAN HEAT ISLAND
+          </h1>
+          <div className="flex gap-2 flex-wrap">
+            <ThemeToggle />
+            {(["Nairobi", "Phoenix", "Delhi"] as const).map((c) => (
+              <button
+                key={c}
+                onClick={() => setCity(c)}
+                className="px-2 md:px-3 py-1 text-xs md:text-xs uppercase font-semibold border transition-colors"
+                style={{
+                  borderColor: city === c ? "var(--accent)" : "var(--border)",
+                  backgroundColor: city === c ? "var(--accent)" : "transparent",
+                  color: city === c ? "black" : "var(--text)",
+                }}
+              >
+                {c}
+              </button>
+            ))}
           </div>
-          {error && (
-            <div className="text-sm text-red-400 font-mono">
-              Error: {error}
-            </div>
-          )}
         </div>
+        {error && (
+          <div className="text-sm mt-3 font-mono" style={{ color: "var(--error)" }}>
+            Error: {error}
+          </div>
+        )}
       </header>
 
       {/* Main content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         {/* Map */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0 md:min-h-auto">
           <UHIMap
             city={city}
             tiles={tiles}
@@ -95,9 +102,12 @@ export default function Home() {
           />
         </div>
 
-        {/* Right sidebar */}
-        <aside className="w-80 border-l flex flex-col overflow-y-auto" style={{ borderColor: "var(--border)" }}>
-          <div className="p-6 space-y-6 flex-1">
+        {/* Right sidebar - stacked on mobile */}
+        <aside className="w-full md:w-80 border-t md:border-t-0 md:border-l flex flex-col overflow-y-auto max-h-96 md:max-h-none" style={{ borderColor: "var(--border)" }}>
+          <div className="p-4 md:p-6 space-y-6 flex-1">
+            {/* Time Slider */}
+            <TimeSlider value={year} onChange={setYear} />
+
             {/* Layer Toggle */}
             <LayerToggle active={activeLayer} onChange={setActiveLayer} />
 
@@ -111,8 +121,8 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t px-6 py-3 text-xs text-gray-500 font-mono" style={{ borderColor: "var(--border)" }}>
-        Data: Landsat 8/9 Collection 2 (Jun–Sep 2023) | LST & NDVI Analysis via Google Earth Engine
+      <footer className="border-t px-4 md:px-6 py-2 md:py-3 text-xs md:text-xs font-mono" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
+        Data: Landsat 8/9 Collection 2 (Jun–Sep {year}) | LST & NDVI via Google Earth Engine
       </footer>
     </div>
   );

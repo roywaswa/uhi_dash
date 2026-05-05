@@ -1,6 +1,8 @@
 import os
+from pathlib import Path
 
 import ee
+import geopandas as gpd
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,6 +18,7 @@ app.add_middleware(
 )
 
 _gee_initialised = False
+_city_geometries = {}
 
 
 def init_gee():
@@ -30,6 +33,30 @@ def init_gee():
     else:
         ee.Initialize()
     _gee_initialised = True
+
+
+def _load_city_geometries():
+    """Load shapefile geometries for each city."""
+    global _city_geometries
+    if _city_geometries:
+        return
+    
+    shapefile_dir = Path(__file__).parent / "data" / "gadm"
+    city_names = {"Nairobi": "nairobi", "Phoenix": "phoenix", "Delhi": "delhi"}
+    
+    for city, shp_name in city_names.items():
+        shp_path = shapefile_dir / f"{shp_name}.shp"
+        if shp_path.exists():
+            gdf = gpd.read_file(shp_path)
+            # Convert to EE geometry
+            geom_json = gdf.geometry[0].__geo_interface__
+            _city_geometries[city] = ee.Geometry(geom_json)
+
+
+def _get_city_geometry(city: str) -> ee.Geometry | None:
+    """Get the EE geometry for a city from shapefiles."""
+    _load_city_geometries()
+    return _city_geometries.get(city)
 
 
 CITIES = {
@@ -67,16 +94,26 @@ VULN_VIS = {
 }
 
 
-def _get_image(city_key: str) -> tuple:
-    """Returns (mean_image, bounds_geometry) for a city."""
-    bounds_coords = CITIES[city_key]["bounds"]
-    bounds = ee.Geometry.Rectangle(bounds_coords)
+def _get_image(city_key: str, year: int = 2023) -> tuple:
+    """Returns (mean_image, bounds_geometry) for a city at a specific year.
+    
+    Uses shapefile geometry for ROI if available, otherwise uses bounding box.
+    """
+    # Try to get geometry from shapefile, fallback to bounds
+    roi_geometry = _get_city_geometry(city_key)
+    if roi_geometry is None:
+        bounds_coords = CITIES[city_key]["bounds"]
+        roi_geometry = ee.Geometry.Rectangle(bounds_coords)
+
+    # Define date range for the year (summer months: June-September)
+    start_date = f"{year}-06-01"
+    end_date = f"{year}-09-01"
 
     collection = (
         ee.ImageCollection("LANDSAT/LC09/C02/T1_L2")
         .merge(ee.ImageCollection("LANDSAT/LC08/C02/T1_L2"))
-        .filterBounds(bounds)
-        .filterDate("2023-06-01", "2023-09-01")
+        .filterBounds(roi_geometry)
+        .filterDate(start_date, end_date)
         .filter(ee.Filter.lt("CLOUD_COVER", 15))
     )
 
@@ -91,8 +128,8 @@ def _get_image(city_key: str) -> tuple:
         )
         return img.addBands(lst).addBands(ndvi)
 
-    mean_image = collection.map(scale_image).select(["LST_C", "NDVI"]).mean().clip(bounds)
-    return mean_image, bounds
+    mean_image = collection.map(scale_image).select(["LST_C", "NDVI"]).mean().clip(roi_geometry)
+    return mean_image, roi_geometry
 
 
 def _vulnerability_image(mean_image, bounds):
@@ -131,11 +168,13 @@ def list_cities():
 
 
 @app.get("/tiles/{city}")
-def get_tiles(city: str):
+def get_tiles(city: str, year: int = 2023):
     init_gee()
     if city not in CITIES:
         raise HTTPException(404, f"City '{city}' not found")
-    mean_image, bounds = _get_image(city)
+    if year < 2019 or year > 2025:
+        raise HTTPException(400, "Year must be between 2019 and 2025")
+    mean_image, bounds = _get_image(city, year)
     _, tiers = _vulnerability_image(mean_image, bounds)
 
     lst_map = mean_image.select("LST_C").getMapId(LST_VIS)
@@ -150,11 +189,13 @@ def get_tiles(city: str):
 
 
 @app.get("/stats/{city}")
-def get_stats(city: str):
+def get_stats(city: str, year: int = 2023):
     init_gee()
     if city not in CITIES:
         raise HTTPException(404, f"City '{city}' not found")
-    mean_image, bounds = _get_image(city)
+    if year < 2019 or year > 2025:
+        raise HTTPException(400, "Year must be between 2019 and 2025")
+    mean_image, bounds = _get_image(city, year)
     _, tiers = _vulnerability_image(mean_image, bounds)
 
     stats = mean_image.reduceRegion(
@@ -193,11 +234,13 @@ def get_stats(city: str):
 
 
 @app.get("/scatter/{city}")
-def get_scatter(city: str):
+def get_scatter(city: str, year: int = 2023):
     init_gee()
     if city not in CITIES:
         raise HTTPException(404, f"City '{city}' not found")
-    mean_image, bounds = _get_image(city)
+    if year < 2019 or year > 2025:
+        raise HTTPException(400, "Year must be between 2019 and 2025")
+    mean_image, bounds = _get_image(city, year)
 
     grid = bounds.coveringGrid(ee.Projection("EPSG:4326").atScale(2000))
     zonal = (
