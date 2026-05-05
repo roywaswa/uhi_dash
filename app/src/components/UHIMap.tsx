@@ -1,7 +1,7 @@
 "use client";
 
 import maplibregl from "maplibre-gl";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { ActiveLayer, CityKey, TileUrls } from "@/types/uhi";
 
@@ -15,8 +15,19 @@ interface Props {
 
 const LAYERS: ActiveLayer[] = ["lst", "ndvi", "vulnerability"];
 
+const MAP_STYLES = {
+  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+};
+
 function rasterId(layer: ActiveLayer): string {
   return `uhi-${layer}`;
+}
+
+function getMapStyle(): string {
+  if (typeof document === "undefined") return MAP_STYLES.dark;
+  const theme = document.documentElement.getAttribute("data-theme");
+  return theme === "light" ? MAP_STYLES.light : MAP_STYLES.dark;
 }
 
 export default function UHIMap({
@@ -28,13 +39,32 @@ export default function UHIMap({
 }: Props): React.JSX.Element {
   const containerRef = useRef<HTMLElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const [mapStyle, setMapStyle] = useState<string>(MAP_STYLES.dark);
 
+  // Initialize map with current theme
+  useEffect(() => {
+    setMapStyle(getMapStyle());
+  }, []);
+
+  // Watch for theme changes
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setMapStyle(getMapStyle());
+    };
+
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Initialize map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     mapRef.current = new maplibregl.Map({
       container: containerRef.current,
-      style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+      style: mapStyle,
       center,
       zoom,
     });
@@ -44,8 +74,16 @@ export default function UHIMap({
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [center, zoom]);
+  }, [center, zoom, mapStyle]);
 
+  // Update map style when theme changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.setStyle(mapStyle);
+  }, [mapStyle]);
+
+  // Pan to new center/zoom
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
