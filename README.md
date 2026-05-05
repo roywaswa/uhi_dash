@@ -151,19 +151,44 @@ The dashboard currently analyzes three major cities across different climatic re
 - **NDVI**: Vegetation index from -0.1 to 0.7 with 6-color sequential palette
 - **Vulnerability Index**: 5-tier urban heat stress classification with perceptual color scheme
 
-### 2. Statistical Analysis
+### 2. Time Series Analysis (2019-2025)
+- **Temporal range**: Summer data (June-September) from 2019 to 2025
+- **Interactive slider**: Aesthetic time slider for year selection with visual feedback
+- **Dynamic data**: All visualizations and statistics update to reflect selected year
+- **Trend analysis**: Compare UHI patterns across different years
+
+### 3. Precise ROI Clipping
+- **City boundaries**: Loaded from shapefile geometries (GADM dataset)
+- **Exact analysis area**: Satellite data clipped to actual city boundaries instead of bounding boxes
+- **Improved accuracy**: Statistics and visualizations reflect only the urban area of interest
+
+### 4. Theme Support (Light/Dark Mode)
+- **Toggle button**: Theme switcher in header (☀/◐ icons)
+- **Dark mode** (default): Optimized for nighttime viewing and reduced eye strain
+- **Light mode**: High-contrast, paper-like appearance for printing and daylight viewing
+- **Persistent preference**: Theme choice saved in browser LocalStorage
+- **Smooth transitions**: CSS variables enable instant theme switching with animations
+
+### 5. Mobile Responsiveness
+- **Responsive layout**: Stack sidebar on mobile devices (<768px width)
+- **Adaptive typography**: Font sizes scale appropriately for smaller screens
+- **Touch-friendly controls**: Buttons and interactive elements sized for mobile input
+- **Flexible grid**: Statistics and charts reflow for mobile viewports
+- **Full functionality**: All features accessible on smartphones and tablets
+
+### 6. Statistical Analysis
 For each city and analysis date, the dashboard computes:
 - **Temperature statistics**: Mean, minimum, maximum, standard deviation (°C)
 - **Vegetation metrics**: Mean NDVI, vegetation coverage percentage
 - **Vulnerability distribution**: Percentage of urban area in each vulnerability tier
 - **High-risk area assessment**: Proportion of city exceeding tier 4-5 vulnerability thresholds
 
-### 3. Spatial Extent
-- **Study boundaries**: FAO/GAUL administrative divisions (actual city boundaries)
+### 7. Spatial Extent
+- **Study boundaries**: City shapefile geometries (actual city boundaries)
 - **Grid resolution**: 100m × 100m pixels (0.01 km²)
 - **Analysis method**: Zonal statistics within clipped city geometry
 
-### 4. Quality Control
+### 8. Quality Control
 - **Cloud filtering**: Landsat Quality Assessment Band (QA_PIXEL) applied to exclude cloudy observations
 - **Atmospheric correction**: Surface reflectance and brightness temperature pre-computed by USGS
 - **Data validation**: NULL checks on all retrieved geospatial statistics
@@ -196,7 +221,7 @@ Response: {
 Retrieve Web Mercator tiles for visualization layers.
 
 ```bash
-GET /tiles/{city}
+GET /tiles/{city}?year=2023
 Response: {
   "lst": "https://...",
   "ndvi": "https://...",
@@ -204,11 +229,14 @@ Response: {
 }
 ```
 
+**Query Parameters**:
+- `year` (optional, int): Year for analysis (2019-2025, default: 2023)
+
 ### /stats/{city}
 Retrieve zonal statistics for city area.
 
 ```bash
-GET /stats/{city}
+GET /stats/{city}?year=2023
 Response: {
   "meanLst": 32.45,
   "maxLst": 45.23,
@@ -226,7 +254,23 @@ Response: {
 }
 ```
 
-## Deployment
+**Query Parameters**:
+- `year` (optional, int): Year for analysis (2019-2025, default: 2023)
+
+### /scatter/{city}
+Retrieve LST-NDVI scatter plot data for city.
+
+```bash
+GET /scatter/{city}?year=2023
+Response: [
+  {"ndvi": 0.245, "lst": 34.21},
+  {"ndvi": 0.412, "lst": 28.15},
+  ...
+]
+```
+
+**Query Parameters**:
+- `year` (optional, int): Year for analysis (2019-2025, default: 2023)
 
 ### System Requirements
 
@@ -238,6 +282,14 @@ Response: {
 - t3.medium or larger instance (2 vCPU, 4GB RAM minimum)
 - 20GB EBS volume (gp3 recommended)
 - Security group: ports 3001/tcp (frontend), 8001/tcp (API)
+- Google Earth Engine credentials for Landsat data access
+
+### Features & Browser Support
+
+- **Modern UI**: Responsive design works on desktop (1024px+), tablet (768px+), and mobile (320px+)
+- **Theme support**: Automatic dark/light mode detection with manual toggle
+- **Cross-browser**: Tested on Chrome, Firefox, Safari, and Edge
+- **Touch-friendly**: Mobile controls optimized for smartphones and tablets
 
 ### Quick Start
 
@@ -262,9 +314,43 @@ docker-compose up --build
 # API Docs: http://localhost:3001/docs
 ```
 
+## Usage
+
+### Selecting a City
+Click city buttons in the header (Nairobi, Phoenix, Delhi) to switch between study areas. The map and statistics automatically update.
+
+### Viewing Different Years
+Use the interactive time slider in the sidebar to select years 2019-2025. The slider shows:
+- Draggable handle with visual feedback
+- Year tick marks and labels
+- Current year display with context
+- Smooth data loading as you move through time
+
+### Switching Themes
+Click the theme toggle button (☀/◐) in the top-right to switch between dark mode and light mode. Your preference is saved automatically.
+
+### Analyzing Layers
+Select visualization layer using the Layer toggle:
+- **LST**: Surface temperature in °C (20-55°C range)
+- **NDVI**: Vegetation index (-0.1 to 0.7)
+- **Vulnerability**: 5-tier heat stress classification
+
+### Viewing Statistics
+The right sidebar displays:
+- **Current year stats**: Temperature, NDVI, risk metrics
+- **Vulnerability distribution**: Bar chart showing % area in each tier
+- **LST-NDVI relationship**: Scatter plot with trend line
+
+### Mobile Usage
+On phones and tablets:
+- Sidebar stacks below the map for easier scrolling
+- Touch-friendly buttons and controls
+- Responsive charts that adapt to screen width
+- Full functionality maintained on all screen sizes
+
 ## Limitations & Caveats
 
-1. **Temporal coverage**: Analysis limited to June-September 2023; seasonal variations not captured in current implementation
+1. **Temporal coverage**: Analysis for years 2019-2025; limited to June-September window for Landsat Tier 1 data availability
 
 2. **Cloud cover bias**: Northern hemisphere summer subject to convective cloud development, potentially biasing results toward clear-sky observations
 
@@ -272,11 +358,12 @@ docker-compose up --build
 
 4. **LST uncertainty**: Standard LST retrieval error ~1-2 K due to emissivity assumptions and atmospheric corrections (Hulley et al., 2016)
 
-5. **Administrative boundaries**: GAUL level 2 boundaries may not align perfectly with meteorologically-defined urban areas
+5. **Administrative boundaries**: GADM city boundaries may not align perfectly with meteorologically-defined urban areas
 
 6. **Landsat revisit time**: 16-day orbital cycle with Landsat 8/9 combined coverage; temporal resolution limited to available cloud-free observations
 
 7. **NDVI saturation**: NDVI exhibits saturation at high biomass levels, reducing discriminative power in densely vegetated areas
+
 
 ## Future Enhancements
 
